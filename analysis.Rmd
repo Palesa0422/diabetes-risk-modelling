@@ -1,0 +1,110 @@
+---
+title: "Predicting Diabetes Risk from Clinical Indicators"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## 1. Research Question
+
+Can we predict the likelihood of diabetes in female patients using 
+clinical indicators such as glucose levels, BMI, age, and insulin?
+
+## 2. Dataset
+
+The Pima Indians Diabetes Dataset sourced from the UCI Machine Learning 
+Repository via Kaggle. It contains 768 observations and 9 variables 
+collected from female patients of Pima Indian heritage, aged 21 and older.
+
+## 3. Load Libraries
+
+```r
+library(tidyverse)
+library(pROC)
+library(ggplot2)
+library(caret)
+```
+
+## 4. Load Data
+
+```r
+diabetes <- read.csv("diabetes.csv")
+head(diabetes)
+dim(diabetes)
+str(diabetes)
+```
+
+## 5. Exploratory Data Analysis
+
+```r
+# Summary statistics
+summary(diabetes)
+
+# Check for missing/zero values in clinical columns
+colSums(diabetes == 0)
+
+# Distribution of outcome
+table(diabetes$Outcome)
+prop.table(table(diabetes$Outcome))
+
+# Visualise glucose by outcome
+ggplot(diabetes, aes(x = factor(Outcome), y = Glucose, fill = factor(Outcome))) +
+  geom_boxplot() +
+  labs(title = "Glucose Levels by Diabetes Outcome",
+       x = "Outcome (0 = No, 1 = Yes)", y = "Glucose") +
+  theme_minimal()
+```
+
+## 6. Data Cleaning
+
+```r
+# Replace biologically implausible zeros with NA
+cols_with_zeros <- c("Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI")
+diabetes[cols_with_zeros] <- lapply(diabetes[cols_with_zeros], 
+                                     function(x) ifelse(x == 0, NA, x))
+
+# Remove rows with NA for now (can impute later)
+diabetes_clean <- na.omit(diabetes)
+nrow(diabetes_clean)
+```
+
+## 7. Logistic Regression Model
+
+```r
+# Fit model
+model <- glm(Outcome ~ Glucose + BMI + Age + Insulin + BloodPressure,
+             data = diabetes_clean,
+             family = binomial)
+
+summary(model)
+
+# Odds ratios
+exp(coef(model))
+exp(confint(model))
+```
+
+## 8. Model Diagnostics
+
+```r
+# Predicted probabilities
+diabetes_clean$predicted_prob <- predict(model, type = "response")
+
+# ROC Curve
+roc_curve <- roc(diabetes_clean$Outcome, diabetes_clean$predicted_prob)
+plot(roc_curve, main = "ROC Curve - Logistic Regression")
+auc(roc_curve)
+```
+
+## 9. Findings & Interpretation
+
+*To be completed after running the analysis. Summarise:*
+- *Which predictors were statistically significant?*
+- *What were the odds ratios and what do they mean clinically?*
+- *What was the AUC and what does it say about model performance?*
+
+## 10. Limitations & Next Steps
+
+*To be completed. Consider:*
+- *Missing data handling (imputation vs removal)*
+- *Model assumptions checked?*
+- *Could a more complex model improve performance?*
